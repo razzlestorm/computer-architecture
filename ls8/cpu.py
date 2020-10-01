@@ -13,11 +13,11 @@ class CPU:
 
     def ram_read(self, MAR):
         # Accept Mem Address to read and return stored value
-        return self.ram[MAR] or 'Nothing there'
+        return self.reg[MAR] or 'Nothing there'
     
     def ram_write(self, MDR, val):
         # take value to write and write it to the ram[memory data register]
-        self.ram[MDR] = val
+        self.reg[MDR] = val
 
     def load(self, file):
         """Load a program into memory."""
@@ -43,7 +43,10 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
+        elif op == 0b10100010:
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -73,16 +76,20 @@ class CPU:
         running = True
     
         while running:
+            
             IR = self.ram[self.pc]
-
+            # MUL
+            if IR == 0b10100010:
+                self.alu(IR, self.ram[self.pc + 1], self.ram[self.pc + 2])
+                self.pc += 2
             # LDI
-            if IR == 0b10000010:
+            elif IR == 0b10000010:
                 self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
-
+                self.pc += 2
             # PRN
             elif IR == 0b01000111:
                 print(self.ram_read(self.ram[self.pc + 1]))
-
+                self.pc += 1
             # HLT
             elif IR == 0b00000001:
                 break
