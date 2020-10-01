@@ -7,9 +7,22 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
+        self.running = True
+        self.pc = 0
         self.ram = [None] * 255
         self.reg = [None] * 8
-        self.pc = 0
+        '''        
+        self.branchtable = {
+            0b10100000: self.alu("ADD", self.pc+1, self.pc+2),
+            0b10100001: self.alu("SUB", self.pc+1, self.pc+2),
+            0b10100010: self.alu("MUL", self.pc+1, self.pc+2),
+            0b10100011: self.alu("DIV", self.pc+1, self.pc+2),
+            0b10100100: self.alu("MOD", self.pc+1, self.pc+2),
+            0b00000001: self.hlt(),
+            0b10000010: self.ldi(self.pc+1, self.pc+2),
+            0b01000111: self.prn(self.pc+1),
+        }
+        '''
 
     def ram_read(self, MAR):
         # Accept Mem Address to read and return stored value
@@ -45,10 +58,28 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "SUB":
             self.reg[reg_a] -= self.reg[reg_b]
-        elif op == 0b10100010:
+        elif op == "MUL" or op == 0b10100010:
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "DIV":
+            self.reg[reg_a] /= self.reg[reg_b]
+        elif op == "MOD":
+            self.reg[reg_a] %= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
+
+        # self.pc += 3
+
+    def hlt(self):
+        self.running = False
+
+    def ldi(self, reg_a, reg_b):
+        # seems to be an extra step, could just write to ram here
+        self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
+        self.pc += 3
+
+    def prn(self):
+        print(self.ram_read(self.ram[self.pc + 1]))
+        self.pc += 2
 
     def trace(self):
         """
@@ -73,10 +104,9 @@ class CPU:
     def run(self):
         """Run the CPU."""
         # TODO: Add garbage handling
-        running = True
     
-        while running:
-            
+        while self.running:
+            # breakpoint()
             IR = self.ram[self.pc]
             # MUL
             if IR == 0b10100010:
@@ -92,7 +122,7 @@ class CPU:
                 self.pc += 1
             # HLT
             elif IR == 0b00000001:
-                break
+                self.running = False
 
             # increment self.pc after running each command
             self.pc += 1
