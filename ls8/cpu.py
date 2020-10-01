@@ -19,25 +19,22 @@ class CPU:
         # take value to write and write it to the ram[memory data register]
         self.ram[MDR] = val
 
-    def load(self):
+    def load(self, file):
         """Load a program into memory."""
 
         address = 0
 
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        program = []
+        with open(file, 'r') as f:
+            for line in f:
+                # slice the line up until the point of the comment, if any are found
+                line = line[:line.find('#')].strip()
+                if line not in ('', '\n', '\r\n'):
+                    # convert to int then back to binary for ls8 to read
+                    program.append(format(int(line, 2), '#010b'))
 
         for instruction in program:
-            self.ram[address] = instruction
+            self.ram[address] = int(instruction, 2)
             address += 1
 
 
@@ -72,7 +69,7 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-
+        # TODO: Add garbage handling
         running = True
     
         while running:
