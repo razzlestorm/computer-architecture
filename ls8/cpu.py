@@ -9,20 +9,21 @@ class CPU:
         """Construct a new CPU."""
         self.running = True
         self.pc = 0
-        self.ram = [None] * 255
-        self.reg = [None] * 8
-        '''        
+        self.ram = [0] * 255
+        self.reg = [0] * 8
+                
+
         self.branchtable = {
-            0b10100000: self.alu("ADD", self.pc+1, self.pc+2),
-            0b10100001: self.alu("SUB", self.pc+1, self.pc+2),
-            0b10100010: self.alu("MUL", self.pc+1, self.pc+2),
-            0b10100011: self.alu("DIV", self.pc+1, self.pc+2),
-            0b10100100: self.alu("MOD", self.pc+1, self.pc+2),
-            0b00000001: self.hlt(),
-            0b10000010: self.ldi(self.pc+1, self.pc+2),
-            0b01000111: self.prn(self.pc+1),
+            0b10100000: self.alu, # ADD
+            0b10100001: self.alu, # SUB
+            0b10100010: self.alu, # MUL
+            0b10100011: self.alu, # DIV
+            0b10100100: self.alu, # MOD
+            0b00000001: self.hlt,
+            0b10000010: self.ldi,
+            0b01000111: self.prn,
         }
-        '''
+        
 
     def ram_read(self, MAR):
         # Accept Mem Address to read and return stored value
@@ -45,7 +46,7 @@ class CPU:
                 if line not in ('', '\n', '\r\n'):
                     # convert to int then back to binary for ls8 to read
                     program.append(format(int(line, 2), '#010b'))
-
+                    
         for instruction in program:
             self.ram[address] = int(instruction, 2)
             address += 1
@@ -54,32 +55,30 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
+        if op == 0b10100000: # ADD
             self.reg[reg_a] += self.reg[reg_b]
-        elif op == "SUB":
+        elif op == 0b10100001: # SUB
             self.reg[reg_a] -= self.reg[reg_b]
-        elif op == "MUL" or op == 0b10100010:
+        elif op == 0b10100010: # MUL
             self.reg[reg_a] *= self.reg[reg_b]
-        elif op == "DIV":
+        elif op == 0b10100011: # DIV
             self.reg[reg_a] /= self.reg[reg_b]
-        elif op == "MOD":
+        elif op == 0b10100100: # MOD
             self.reg[reg_a] %= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
-
-        # self.pc += 3
+        
+        self.ram_write(reg_b, 0)
 
     def hlt(self):
         self.running = False
 
     def ldi(self, reg_a, reg_b):
         # seems to be an extra step, could just write to ram here
-        self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
-        self.pc += 3
+        self.ram_write(reg_a, reg_b)
 
-    def prn(self):
-        print(self.ram_read(self.ram[self.pc + 1]))
-        self.pc += 2
+    def prn(self, mem_arg):
+        print(self.ram_read(mem_arg))
 
     def trace(self):
         """
@@ -106,27 +105,19 @@ class CPU:
         # TODO: Add garbage handling
     
         while self.running:
-            # breakpoint()
             IR = self.ram[self.pc]
-            # MUL
-            if IR == 0b10100010:
-                self.alu(IR, self.ram[self.pc + 1], self.ram[self.pc + 2])
-                self.pc += 2
-            # LDI
-            elif IR == 0b10000010:
-                self.ram_write(self.ram[self.pc + 1], self.ram[self.pc + 2])
-                self.pc += 2
-            # PRN
-            elif IR == 0b01000111:
-                print(self.ram_read(self.ram[self.pc + 1]))
-                self.pc += 1
-            # HLT
-            elif IR == 0b00000001:
-                self.running = False
-
-            # increment self.pc after running each command
-            self.pc += 1
-
-
-
-
+            num_of_args = IR >> 6
+            alu_check = (IR >> 5) & 0b001 
+            args = []
+            if num_of_args > 0:
+                ii = 1
+                while ii <= num_of_args:
+                    args.append(self.ram[self.pc + ii])
+                    ii += 1
+            
+            if alu_check:
+                self.branchtable[IR](IR, (*args))
+            else:    
+                self.branchtable[IR](*args)
+            
+            self.pc += 1 + num_of_args
