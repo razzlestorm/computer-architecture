@@ -11,6 +11,7 @@ class CPU:
         self.pc = 0
         self.ram = [0] * 255
         self.reg = [0] * 8
+        self.reg[7] = 0xF4
                 
 
         self.branchtable = {
@@ -22,6 +23,8 @@ class CPU:
             0b00000001: self.hlt,
             0b10000010: self.ldi,
             0b01000111: self.prn,
+            0b01000101: self.push,
+            0b01000110: self.pop,
         }
         
 
@@ -69,6 +72,19 @@ class CPU:
             raise Exception("Unsupported ALU operation")
         
         self.ram_write(reg_b, 0)
+    
+    def push(self, address):
+        self.reg[7] -= 1
+        SP = self.reg[7]
+        value = self.reg[address]
+        self.ram[SP] = value
+
+    def pop(self, address):
+        SP = self.reg[7]
+        value = self.ram[SP]
+        self.reg[address] = value
+        self.reg[7] += 1
+
 
     def hlt(self):
         self.running = False
