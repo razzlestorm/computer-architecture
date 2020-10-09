@@ -25,6 +25,8 @@ class CPU:
             0b01000111: self.prn,
             0b01000101: self.push,
             0b01000110: self.pop,
+            0b01010000: self.call,
+            0b00010001: self.ret
         }
         
 
@@ -54,6 +56,22 @@ class CPU:
             self.ram[address] = int(instruction, 2)
             address += 1
 
+    def call(self, address):
+        return_address = self.pc + 2
+        self.reg[7] -= 1
+        SP = self.reg[7]
+        self.ram[SP] = return_address
+        reg_idx = self.ram[address]
+        sub_address = self.reg[reg_idx]
+        self.pc = sub_address
+
+    def ret(self):
+        SP = self.reg[7]
+        return_address = self.ram[SP]
+        self.pc = return_address
+        self.reg[7] += 1
+
+
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -70,8 +88,7 @@ class CPU:
             self.reg[reg_a] %= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
-        
-        self.ram_write(reg_b, 0)
+
     
     def push(self, address):
         self.reg[7] -= 1
@@ -124,6 +141,7 @@ class CPU:
             IR = self.ram[self.pc]
             num_of_args = IR >> 6
             alu_check = (IR >> 5) & 0b001 
+            pc_set_check = (IR >> 4) & 0b0001
             args = []
             if num_of_args > 0:
                 ii = 1
@@ -135,5 +153,6 @@ class CPU:
                 self.branchtable[IR](IR, (*args))
             else:    
                 self.branchtable[IR](*args)
-            
-            self.pc += 1 + num_of_args
+                
+            if not pc_set_check:
+                self.pc += 1 + num_of_args
