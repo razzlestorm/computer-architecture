@@ -12,6 +12,7 @@ class CPU:
         self.ram = [0] * 255
         self.reg = [0] * 8
         self.reg[7] = 0xF4
+        self.fl = 0b00000000 #00000LGE
                 
 
         self.branchtable = {
@@ -20,6 +21,7 @@ class CPU:
             0b10100010: self.alu, # MUL
             0b10100011: self.alu, # DIV
             0b10100100: self.alu, # MOD
+            0b10100111: self.alu # CMP
             0b00000001: self.hlt,
             0b10000010: self.ldi,
             0b01000111: self.prn,
@@ -86,6 +88,12 @@ class CPU:
             self.reg[reg_a] /= self.reg[reg_b]
         elif op == 0b10100100: # MOD
             self.reg[reg_a] %= self.reg[reg_b]
+        elif op == 0b10100111: # COMPARE
+            #FLAG = 00000LGE
+            if reg_a == reg_b:
+                self.fl = (self.fl >> 5) ^ 0b001
+            else:
+                self.fl = (self.fl >> 5) ^ 0b100 if reg_a < reg_b else (self.fl >> 5) ^ 0b010
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -112,6 +120,15 @@ class CPU:
 
     def prn(self, mem_arg):
         print(self.ram_read(mem_arg))
+
+    def jeq(self, reg_a):
+        pass
+
+    def jne(self, reg_a):
+        pass
+
+    def jmp(self, reg_a):
+        pass
 
     def trace(self):
         """
