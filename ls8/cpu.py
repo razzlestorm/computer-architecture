@@ -21,14 +21,17 @@ class CPU:
             0b10100010: self.alu, # MUL
             0b10100011: self.alu, # DIV
             0b10100100: self.alu, # MOD
-            0b10100111: self.alu # CMP
+            0b10100111: self.alu, # CMP
             0b00000001: self.hlt,
             0b10000010: self.ldi,
             0b01000111: self.prn,
             0b01000101: self.push,
             0b01000110: self.pop,
             0b01010000: self.call,
-            0b00010001: self.ret
+            0b00010001: self.ret,
+            0b01010100: self.jmp,
+            0b01010110: self.jne,
+            0b01010101: self.jeq,
         }
         
 
@@ -90,7 +93,7 @@ class CPU:
             self.reg[reg_a] %= self.reg[reg_b]
         elif op == 0b10100111: # COMPARE
             #FLAG = 00000LGE
-            if reg_a == reg_b:
+            if self.reg[reg_a] == self.reg[reg_b]:
                 self.fl = (self.fl >> 5) ^ 0b001
             else:
                 self.fl = (self.fl >> 5) ^ 0b100 if reg_a < reg_b else (self.fl >> 5) ^ 0b010
@@ -122,13 +125,27 @@ class CPU:
         print(self.ram_read(mem_arg))
 
     def jeq(self, reg_a):
-        pass
+        """
+        If `equal` flag is set (true), jump to the address stored in the given register.
+        """
+        self.pc = self.reg[reg_a] if self.fl == 1 else self.pc + 2
 
     def jne(self, reg_a):
-        pass
+        """
+        If `E` flag is clear (false, 0), jump to the address stored in the given register.
+        """
+        # This works, but let's do it bitwise
+        self.pc = self.reg[reg_a] if self.fl != 1 else self.pc + 2
+        
 
     def jmp(self, reg_a):
-        pass
+        """
+        Jump to the address stored in the given register.
+        Set the `PC` to the address stored in the given register.
+        """
+        # get given register
+        # set PC to ram address stored in register
+        self.pc = self.reg[reg_a]
 
     def trace(self):
         """
@@ -155,6 +172,7 @@ class CPU:
         # TODO: Add garbage handling
     
         while self.running:
+            #breakpoint()
             IR = self.ram[self.pc]
             num_of_args = IR >> 6
             alu_check = (IR >> 5) & 0b001 
