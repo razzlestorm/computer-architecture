@@ -81,6 +81,36 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
+        def add(self, reg_a, reg_b):
+            self.reg[reg_a] += self.reg[reg_b]
+        def sub(self, reg_a, reg_b):
+            self.reg[reg_a] -= self.reg[reg_b]
+        def mul(self, reg_a, reg_b):
+            self.reg[reg_a] *= self.reg[reg_b]
+        def div(self, reg_a, reg_b):
+            self.reg[reg_a] /= self.reg[reg_b]
+        def mod(self, reg_a, reg_b):
+            self.reg[reg_a] %= self.reg[reg_b]
+        def comp(self, reg_a, reg_b):
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.fl = (self.fl >> 5) ^ 0b001
+            else:
+                self.fl = (self.fl >> 5) ^ 0b100 if reg_a < reg_b else (self.fl >> 5) ^ 0b010
+
+        alu_table = {
+            0b10100000: add,
+            0b10100001: sub,
+            0b10100010: mul,
+            0b10100011: div,
+            0b10100100: mod,
+            0b10100111: comp,
+        }
+
+        return alu_table[op](self, reg_a, reg_b)
+
+
+
+        '''
         if op == 0b10100000: # ADD
             self.reg[reg_a] += self.reg[reg_b]
         elif op == 0b10100001: # SUB
@@ -98,7 +128,7 @@ class CPU:
             else:
                 self.fl = (self.fl >> 5) ^ 0b100 if reg_a < reg_b else (self.fl >> 5) ^ 0b010
         else:
-            raise Exception("Unsupported ALU operation")
+            raise Exception("Unsupported ALU operation")'''
 
     
     def push(self, address):
